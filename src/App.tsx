@@ -7,6 +7,10 @@ import { AppLayout } from "@/components/AppLayout";
 import LiveOps from "./pages/LiveOps";
 import Runs from "./pages/Runs";
 import RunDetail from "./pages/RunDetail";
+import Automations from "./pages/Automations";
+import VoiceCenter from "./pages/VoiceCenter";
+import SystemsMap from "./pages/SystemsMap";
+import Audit from "./pages/Audit";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +26,10 @@ const App = () => (
             <Route path="/" element={<LiveOps />} />
             <Route path="/runs" element={<Runs />} />
             <Route path="/runs/:runId" element={<RunDetail />} />
+            <Route path="/automations" element={<Automations />} />
+            <Route path="/voice" element={<VoiceCenter />} />
+            <Route path="/systems" element={<SystemsMap />} />
+            <Route path="/audit" element={<Audit />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
