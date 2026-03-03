@@ -2,8 +2,9 @@ import { mockIncidents, mockKPIs } from "@/data/mockData";
 import { IncidentCard } from "@/components/IncidentCard";
 import { KPIBar } from "@/components/KPIBar";
 import { AutonomySwitch } from "@/components/AutonomySwitch";
+import { useEffect, useRef, useState } from "react";
 
-const eventStream = [
+const baseEvents = [
   { ts: "14:23:16", type: "action", msg: "Nova Act: Reassigning driver D-441 → Zone 12" },
   { ts: "14:23:14", type: "action", msg: "Nova Act: Opened zone management panel" },
   { ts: "14:23:11", type: "action", msg: "Nova Act: Logged into Dispatch Dashboard" },
@@ -15,6 +16,17 @@ const eventStream = [
   { ts: "14:22:45", type: "event", msg: "Shipment delay reported: NE-7 avg +47min" },
 ];
 
+const liveMessages = [
+  { type: "event", msg: "Telemetry update: Zone 12 driver count +1" },
+  { type: "action", msg: "Nova Act: Confirmed reassignment D-441" },
+  { type: "detection", msg: "Anomaly signal weakening: NE corridor (3.8σ)" },
+  { type: "event", msg: "CRM sync retry initiated — attempt 3/5" },
+  { type: "alert", msg: "SLA countdown: INC-2847 T-8min" },
+  { type: "decision", msg: "Reroute evaluation: NE-9 capacity sufficient" },
+  { type: "action", msg: "Nova Act: Updating priority lanes in dispatch" },
+  { type: "event", msg: "Driver D-522 acknowledged reassignment" },
+];
+
 const streamColors: Record<string, string> = {
   action: "text-primary",
   decision: "text-severity-ok",
@@ -23,9 +35,31 @@ const streamColors: Record<string, string> = {
   event: "text-muted-foreground",
 };
 
+function now() {
+  const d = new Date();
+  return d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
 const LiveOps = () => {
+  const [events, setEvents] = useState(baseEvents);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const msgIdx = useRef(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const msg = liveMessages[msgIdx.current % liveMessages.length];
+      msgIdx.current++;
+      setEvents(prev => [{ ts: now(), type: msg.type, msg: msg.msg }, ...prev.slice(0, 30)]);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [events]);
+
   return (
-    <div className="p-4 space-y-4 ops-grid min-h-full">
+    <div className="p-4 space-y-4 ops-grid min-h-full animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -46,8 +80,10 @@ const LiveOps = () => {
         <div className="lg:col-span-2 space-y-3">
           <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Active Incidents</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mockIncidents.map((inc) => (
-              <IncidentCard key={inc.id} incident={inc} />
+            {mockIncidents.map((inc, i) => (
+              <div key={inc.id} className="animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                <IncidentCard incident={inc} />
+              </div>
             ))}
           </div>
         </div>
@@ -61,10 +97,10 @@ const LiveOps = () => {
             <div className="p-3 border-b border-border">
               <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">What Changed?</h3>
             </div>
-            <div className="p-2 max-h-80 overflow-auto">
+            <div ref={scrollRef} className="p-2 max-h-80 overflow-auto">
               <div className="space-y-0.5">
-                {eventStream.map((evt, i) => (
-                  <div key={i} className="flex gap-2 py-1 text-[11px] font-mono animate-slide-in" style={{ animationDelay: `${i * 50}ms` }}>
+                {events.map((evt, i) => (
+                  <div key={`${evt.ts}-${i}`} className={`flex gap-2 py-1 text-[11px] font-mono ${i === 0 ? "animate-slide-in" : ""}`}>
                     <span className="text-muted-foreground flex-shrink-0">{evt.ts}</span>
                     <span className={streamColors[evt.type]}>{evt.msg}</span>
                   </div>
