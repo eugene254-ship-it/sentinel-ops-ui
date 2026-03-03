@@ -1,6 +1,7 @@
 import { Incident } from "@/types/sentinel";
 import { AlertTriangle, Clock, ChevronRight, Eye, Zap, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 const severityConfig = {
   critical: { bg: "bg-severity-critical/10", border: "border-severity-critical/30", text: "text-severity-critical", dot: "bg-severity-critical" },
@@ -24,24 +25,36 @@ const statusIcons = {
   running: Play,
 };
 
-function timeUntil(date: Date): string {
-  const diff = date.getTime() - Date.now();
-  if (diff < 0) return "BREACHED";
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+function useLiveCountdown(deadline: Date) {
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    const tick = () => {
+      const diff = deadline.getTime() - Date.now();
+      if (diff < 0) { setText("BREACHED"); return; }
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      if (mins < 60) setText(`${mins}m ${secs}s`);
+      else setText(`${Math.floor(mins / 60)}h ${mins % 60}m`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [deadline]);
+
+  return text;
 }
 
 export function IncidentCard({ incident }: { incident: Incident }) {
   const navigate = useNavigate();
   const sev = severityConfig[incident.severity];
-  const slaText = timeUntil(incident.slaDeadline);
+  const slaText = useLiveCountdown(incident.slaDeadline);
   const isBreached = slaText === "BREACHED";
   const StatusIcon = statusIcons[incident.status] || Eye;
 
   return (
     <div
-      className={`rounded-lg border ${sev.border} ${sev.bg} p-4 cursor-pointer hover:brightness-110 transition-all group`}
+      className={`rounded-lg border ${sev.border} ${sev.bg} p-4 cursor-pointer hover:brightness-110 transition-all duration-200 group hover:scale-[1.01]`}
       onClick={() => navigate(`/runs/${incident.runId}`)}
     >
       <div className="flex items-start justify-between mb-3">
@@ -50,7 +63,7 @@ export function IncidentCard({ incident }: { incident: Incident }) {
           <span className={`text-xs font-mono font-bold uppercase ${sev.text}`}>{incident.severity}</span>
           <span className="text-xs font-mono text-muted-foreground">{incident.id}</span>
         </div>
-        <div className={`flex items-center gap-1 text-xs font-mono ${isBreached ? "text-severity-critical font-bold" : "text-muted-foreground"}`}>
+        <div className={`flex items-center gap-1 text-xs font-mono tabular-nums ${isBreached ? "text-severity-critical font-bold animate-pulse-dot" : "text-muted-foreground"}`}>
           <Clock className="w-3 h-3" />
           <span>SLA {slaText}</span>
         </div>
@@ -78,7 +91,7 @@ export function IncidentCard({ incident }: { incident: Incident }) {
             {incident.confidence}% conf
           </span>
         </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
       </div>
     </div>
   );
