@@ -5,9 +5,11 @@ import {
   Phone,
   Network,
   Shield,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -32,6 +34,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -71,14 +74,28 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      {!collapsed && (
-        <div className="mt-auto p-4 border-t border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-severity-ok animate-pulse-dot" />
-            <span className="text-xs font-mono text-muted-foreground">All systems nominal</span>
+      <div className="mt-auto border-t border-border">
+        {!collapsed && user && (
+          <div className="p-3 space-y-2">
+            <div className="text-[10px] font-mono text-muted-foreground truncate">{user.email}</div>
+            <button
+              onClick={signOut}
+              className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors w-full"
+            >
+              <LogOut className="w-3 h-3" />
+              Sign Out
+            </button>
           </div>
-        </div>
-      )}
+        )}
+        {!collapsed && (
+          <div className="p-3 border-t border-border">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-severity-ok animate-pulse-dot" />
+              <span className="text-xs font-mono text-muted-foreground">All systems nominal</span>
+            </div>
+          </div>
+        )}
+      </div>
     </Sidebar>
   );
 }
