@@ -1,4 +1,4 @@
-import { mockRuns } from "@/data/mockData";
+import { useRuns } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
 import { Clock, GitBranch } from "lucide-react";
 
@@ -19,6 +19,7 @@ const sevColors: Record<string, string> = {
 
 const Runs = () => {
   const navigate = useNavigate();
+  const { data: runs, isLoading } = useRuns();
 
   return (
     <div className="p-4 space-y-4">
@@ -27,57 +28,61 @@ const Runs = () => {
         <p className="text-xs font-mono text-muted-foreground">Every autonomous action with permanent audit trail</p>
       </div>
 
-      <div className="rounded-lg border border-border overflow-hidden">
-        <table className="w-full text-xs font-mono">
-          <thead>
-            <tr className="bg-secondary/50 text-muted-foreground">
-              <th className="text-left p-3 font-medium">Run</th>
-              <th className="text-left p-3 font-medium">System</th>
-              <th className="text-left p-3 font-medium">Severity</th>
-              <th className="text-left p-3 font-medium">Status</th>
-              <th className="text-left p-3 font-medium">Mode</th>
-              <th className="text-left p-3 font-medium">Agent</th>
-              <th className="text-left p-3 font-medium">Started</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockRuns.map((run) => (
-              <tr
-                key={run.id}
-                onClick={() => navigate(`/runs/${run.id}`)}
-                className="border-t border-border hover:bg-secondary/30 cursor-pointer transition-colors"
-              >
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="w-3 h-3 text-muted-foreground" />
-                    <div>
-                      <div className="text-foreground font-medium">{run.id}</div>
-                      <div className="text-muted-foreground text-[10px]">{run.title}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-3 text-muted-foreground">{run.system}</td>
-                <td className="p-3">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${sevColors[run.severity]}`}>
-                    {run.severity}
-                  </span>
-                </td>
-                <td className="p-3">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] capitalize ${statusColors[run.status] || "text-muted-foreground"}`}>
-                    {run.status}
-                  </span>
-                </td>
-                <td className="p-3 text-muted-foreground uppercase">{run.autonomyMode}</td>
-                <td className="p-3 text-muted-foreground">{run.agent}</td>
-                <td className="p-3 text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {run.startedAt.toLocaleTimeString("en-US", { hour12: false })}
-                </td>
+      {isLoading ? (
+        <div className="text-xs font-mono text-muted-foreground animate-pulse p-8 text-center">Loading runs...</div>
+      ) : (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <table className="w-full text-xs font-mono">
+            <thead>
+              <tr className="bg-secondary/50 text-muted-foreground">
+                <th className="text-left p-3 font-medium">Run</th>
+                <th className="text-left p-3 font-medium">System</th>
+                <th className="text-left p-3 font-medium">Severity</th>
+                <th className="text-left p-3 font-medium">Status</th>
+                <th className="text-left p-3 font-medium">Mode</th>
+                <th className="text-left p-3 font-medium">Agent</th>
+                <th className="text-left p-3 font-medium">Started</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {(runs ?? []).map((run) => (
+                <tr
+                  key={run.id}
+                  onClick={() => navigate(`/runs/${run.id}`)}
+                  className="border-t border-border hover:bg-secondary/30 cursor-pointer transition-colors"
+                >
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="w-3 h-3 text-muted-foreground" />
+                      <div>
+                        <div className="text-foreground font-medium">{run.id}</div>
+                        <div className="text-muted-foreground text-[10px]">{run.title}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-muted-foreground">{run.system}</td>
+                  <td className="p-3">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${sevColors[run.severity] ?? ""}`}>
+                      {run.severity}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] capitalize ${statusColors[run.status] || "text-muted-foreground"}`}>
+                      {run.status}
+                    </span>
+                  </td>
+                  <td className="p-3 text-muted-foreground uppercase">{run.autonomyMode}</td>
+                  <td className="p-3 text-muted-foreground">{run.agent}</td>
+                  <td className="p-3 text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {run.startedAt.toLocaleTimeString("en-US", { hour12: false })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

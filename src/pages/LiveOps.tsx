@@ -1,8 +1,9 @@
-import { mockIncidents, mockKPIs } from "@/data/mockData";
+import { useIncidents } from "@/hooks/useSupabaseData";
 import { IncidentCard } from "@/components/IncidentCard";
 import { KPIBar } from "@/components/KPIBar";
 import { AutonomySwitch } from "@/components/AutonomySwitch";
 import { useEffect, useRef, useState } from "react";
+import { mockKPIs } from "@/data/mockData";
 
 const baseEvents = [
   { ts: "14:23:16", type: "action", msg: "Nova Act: Reassigning driver D-441 → Zone 12" },
@@ -41,6 +42,7 @@ function now() {
 }
 
 const LiveOps = () => {
+  const { data: incidents, isLoading } = useIncidents();
   const [events, setEvents] = useState(baseEvents);
   const scrollRef = useRef<HTMLDivElement>(null);
   const msgIdx = useRef(0);
@@ -60,7 +62,6 @@ const LiveOps = () => {
 
   return (
     <div className="p-4 space-y-4 ops-grid min-h-full animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-foreground tracking-tight">Live Operations</h1>
@@ -72,27 +73,26 @@ const LiveOps = () => {
         </div>
       </div>
 
-      {/* KPIs */}
       <KPIBar kpis={mockKPIs} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Incidents */}
         <div className="lg:col-span-2 space-y-3">
           <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Active Incidents</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {mockIncidents.map((inc, i) => (
-              <div key={inc.id} className="animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-                <IncidentCard incident={inc} />
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="text-xs font-mono text-muted-foreground animate-pulse">Loading incidents...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {(incidents ?? []).map((inc, i) => (
+                <div key={inc.id} className="animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                  <IncidentCard incident={inc} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Right column */}
         <div className="space-y-4">
           <AutonomySwitch />
-
-          {/* Event stream */}
           <div className="rounded-lg border border-border bg-card">
             <div className="p-3 border-b border-border">
               <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">What Changed?</h3>
